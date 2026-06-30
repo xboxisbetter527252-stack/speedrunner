@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>SpeedDash ∞ INFINITE EDITION</title>
+    <style>
+        body { margin:0; background:#0a0a1f; font-family:'Courier New',monospace; color:#0ff; overflow:hidden; touch-action:none; }
+        canvas { display:block; margin:0 auto; image-rendering:pixelated; max-width:100%; }
+        .overlay { position:absolute; top:0; left:0; width:100%; height:100%; background:rgba(5,5,30,0.98); display:none; flex-direction:column; align-items:center; justify-content:center; z-index:500; }
+        
+        button { background:#112; color:#0ff; border:2px solid #0ff; padding:12px; margin:6px; cursor:pointer; font-weight:bold; width:260px; font-size:16px; position:relative; z-index:600; }
+        button:active { background:#0ff; color:#000; }
+        
+        #mod-btn { 
+            position:absolute; top:15px; right:15px; z-index:100; 
+            background:#f0f; color:#000; padding:10px 18px; 
+            font-weight:bold; border-radius:8px; display:none; border:none; width:auto;
+        }
+
+        #mod-status {
+            position:absolute; top:55px; left:10px; z-index:10;
+            background:rgba(255,0,255,0.2); color:#f0f;
+            padding:4px 8px; border:1px solid #f0f; font-size:12px;
+            display:none;
+        }
+
+        #modmenu { 
+            background:rgba(5,5,20,0.99); 
+            padding:15px; 
+            border-left:4px solid #f0f;
+            width:340px;
+            height:100%;
+            right:0; left:auto;
+            justify-content:flex-start;
+            overflow-y:auto;
+            z-index:1000;
+        }
+        #modmenu h2 { color:#f0f; margin:0; font-size:18px; border-bottom:2px solid #f0f; width:100%; padding-bottom:5px; }
+        
+        .mod-section { width:100%; margin-bottom:15px; background:rgba(255,255,255,0.05); padding:10px; border-radius:5px; box-sizing:border-box; }
+        .mod-section h3 { color:#ff0; font-size:12px; margin:0 0 5px 0; text-transform:uppercase; letter-spacing:1px; }
+        .mod-section p { color:#888; font-size:9px; margin:0 0 8px 0; line-height:1.2; }
+        
+        .engine-box { display:flex; gap:5px; margin-bottom:10px; }
+        .engine-box input { background:#000; border:1px solid #f0f; color:#0f0; padding:8px; width:100%; font-family:monospace; }
+
+        .slider-row { display:flex; flex-direction:column; margin-bottom:8px; }
+        .slider-row label { font-size:10px; color:#aaa; margin-bottom:2px; display:flex; justify-content:space-between; }
+        .slider-row input { width:100%; accent-color:#f0f; }
+
+        .mod-grid { display:grid; grid-template-columns: 1fr 1fr; gap:5px; width:100%; }
+        .mod-grid button { width:auto; padding:8px; font-size:10px; margin:0; border:1px solid #0ff; }
+        .mod-active { background:#f0f !important; color:#000 !important; border-color:#fff !important; }
+
+        #mobile-controls { position:absolute; bottom:20px; left:20px; right:20px; z-index:50; display:flex; justify-content:space-between; align-items:flex-end; }
+        #jump-btn { background:rgba(255,220,0,0.4); border:4px solid #ff0; width:80px; height:80px; border-radius:50%; font-size:16px; font-weight:bold; display:flex; align-items:center; justify-content:center; user-select:none; }
+        #joystick-container { position:relative; width:120px; height:120px; }
+        #joystick-base { width:120px; height:120px; background:rgba(0,255,255,0.2); border:4px solid #0ff; border-radius:50%; }
+        #joystick-knob { position:absolute; width:50px; height:50px; background:#0ff; border-radius:50%; top:35px; left:35px; box-shadow:0 0 20px #0ff; pointer-events:none; }
+    </style>
+</head>
+<body>
+    <div id="ui" style="position:absolute;top:10px;left:10px;z-index:10;background:rgba(0,0,0,0.8);padding:8px 14px;border:2px solid #0ff;">
+        <div id="timer">TIME: 0.00s</div>
+        <div id="mod-id-display" style="font-size:10px; color:#f0f; margin-top:4px;">MOD SEED: NONE</div>
+    </div>
+
+    <div id="mod-status">MODS: ACTIVE</div>
+
+    <button id="mod-btn" onclick="toggleModMenu()">MOD MENU</button>
+
+    <!-- MAIN MENU -->
+    <div id="main-menu" class="overlay" style="display:flex;">
+        <h1 style="margin-bottom:5px;">SPEEDDASH ∞</h1>
+        <div style="color:#f0f; font-size:12px; margin-bottom:30px;">INFINITE EDITION</div>
+        <button id="btn-start" onclick="startGame()">START RUN</button>
+        <button id="btn-dev" onclick="showPassword()">DEV PASSWORD</button>
+    </div>
+
+    <!-- PASSWORD SCREEN -->
+    <div id="password-screen" class="overlay">
+        <h2>ENTER CODE</h2>
+        <div id="pass-display" style="font-size:48px;letter-spacing:25px;background:#000;padding:20px 70px;margin:30px;color:#0f0;">••••</div>
+        <div style="display:grid;grid-template-columns:repeat(3,85px);gap:15px;" id="keypad"></div>
+        <button onclick="hidePassword()">BACK</button>
+    </div>
+
+    <!-- MOD MENU -->
+    <div id="modmenu" class="overlay">
+        <h2>🌀 INFINITE ENGINE</h2>
+        
+        <div class="mod-section">
+            <h3>Mod Discovery Engine</h3>
+            <p>Enter any ID to generate a unique set of game rules.</p>
+            <div class="engine-box">
+                <input type="number" id="mod-seed" placeholder="Enter Mod ID..." min="1">
+                <button onclick="applySeed()" style="width:100px; background:#f0f; color:#000; border:none;">APPLY</button>
+            </div>
+            <button onclick="randomSeed()" style="width:100%; background:#333; font-size:10px;">SURPRISE ME</button>
+        </div>
+
+        <div class="mod-section">
+            <h3>Physics Overrides</h3>
+            <div class="slider-row">
+                <label><span>Gravity: <b id="val-grav">0.82</b></span></label>
+                <input type="range" min="-200" max="200" value="82" oninput="setParam('grav', this.value)">
+            </div>
+            <div class="slider-row">
+                <label><span>Speed: <b id="val-speed">1.0</b></span></label>
+                <input type="range" min="0" max="500" value="100" oninput="setParam('speed', this.value)">
+            </div>
+            <div class="slider-row">
+                <label><span>Jump Power: <b id="val-jump">16.5</b></span></label>
+                <input type="range" min="0" max="500" value="165" oninput="setParam('jump', this.value)">
+            </div>
+        </div>
+
+        <div class="mod-section">
+            <h3>Quick Presets</h3>
+            <div class="mod-grid">
+                <button id="m1" onclick="tMod('godMode','m1')">God Mode</button>
+                <button id="m2" onclick="tMod('noClip','m2')">No Clip</button>
+                <button id="m3" onclick="tMod('flyMode','m3')">Fly Mode</button>
+                <button id="m4" onclick="tMod('infJump','m4')">Inf Jump</button>
+                <button id="m5" onclick="tMod('disco','m5')">Disco</button>
+                <button id="m6" onclick="tMod('ghost','m6')">Ghost</button>
+                <button id="m7" onclick="tMod('rainbow','m7')">Rainbow</button>
+                <button id="m8" onclick="tMod('matrix','m8')">Matrix</button>
+                <button id="m9" onclick="tMod('enemies','m9')">Enemies</button>
+                <button id="m10" onclick="tMod('storm','m10')">Storm</button>
+            </div>
+        </div>
+
+        <button onclick="toggleModMenu()" style="background:#411; width:100%; margin-top:auto;">CLOSE ENGINE</button>
+    </div>
+
+    <canvas id="game" width="800" height="400"></canvas>
+
+    <div id="mobile-controls">
+        <div id="jump-btn">JUMP</div>
+        <div id="joystick-container">
+            <div id="joystick-base"></div>
+            <div id="joystick-knob"></div>
+        </div>
+    </div>
+
+    <script>
+        // GLOBAL GAME STATE
+        let canvas, ctx;
+        let player = {x:80, y:220, vx:0, vy:0, w:32, h:32, onGround:false, color:'#f00'};
+        let platforms = [], goals = [], enemies = [], trails = [];
+        let time = 0, gameRunning = false, frameCount = 0;
+        let cameraX = 0, nextGoalX = 900;
+        let keys = {}, joystickX = 0, modUnlocked = false;
+        let passwordInput = '';
+
+        let p = { grav: 0.82, speed: 1.0, jump: 16.5, size: 1.0 };
+        const mods = { godMode: false, noClip: false, flyMode: false, infJump: false, disco: false, ghost: false, rainbow: false, matrix: false, enemies: false, storm: false };
+
+        // INITIALIZATION
+        window.addEventListener('DOMContentLoaded', () => {
+            canvas = document.getElementById('game');
+            ctx = canvas.getContext('2d');
+            setupMobile();
+            gameLoop();
+
+            // Mobile click fixes for main menu
+            const startBtn = document.getElementById('btn-start');
+            const devBtn = document.getElementById('btn-dev');
+            
+            startBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startGame(); });
+            devBtn.addEventListener('touchstart', (e) => { e.preventDefault(); showPassword(); });
+        });
+
+        function generateSection(startX) {
+            for (let i = 0; i < 8; i++) {
+                platforms.push({x: startX + i*130 + Math.random()*80, y: 160 + Math.random()*170, w: 85 + Math.random()*70, h: 18});
+                if (mods.enemies && Math.random() > 0.7) {
+                    enemies.push({x: startX + i*130 + 100, y: 100, r: 15, vx: (Math.random()-0.5)*4});
+                }
+            }
+            goals.push({x: startX + 1050, y: 110, w: 40, h: 80});
+            nextGoalX = startX + 1350;
+        }
+
+        function update() {
+            if (!gameRunning) return;
+            frameCount++;
+            time += 1/60;
+
+            let ax = (keys['ArrowRight']||keys['d']?1:0) - (keys['ArrowLeft']||keys['a']?1:0) + joystickX;
+            if (mods.storm) ax += Math.sin(frameCount/15) * 0.8;
+            
+            player.vx += ax * 1.65 * p.speed;
+            player.vx *= 0.83;
+
+            if (keys[' '] && (player.onGround || mods.flyMode || mods.godMode || mods.infJump)) {
+                player.vy = (mods.flyMode || mods.godMode) ? -9 : -p.jump;
+                player.onGround = false;
+            }
+
+            if (!(mods.godMode || mods.flyMode)) player.vy += p.grav;
+            player.x += player.vx;
+            player.y += player.vy;
+            player.onGround = false;
+
+            if (!(mods.noClip || mods.godMode)) {
+                for (let plat of platforms) {
+                    if (player.x + player.w > plat.x && player.x < plat.x + plat.w && player.y + player.h > plat.y && player.y < plat.y + plat.h) {
+                        if (player.vy > 0) { player.y = plat.y - player.h; player.vy = 0; player.onGround = true; }
+                    }
+                }
+            }
+
+            for (let e of enemies) {
+                e.x += e.vx;
+                if (Math.abs(player.x - e.x) < 30 && Math.abs(player.y - e.y) < 30 && !mods.godMode) resetRun();
+            }
+
+            if (player.y > 650) resetRun();
+            cameraX = Math.max(0, player.x - 320);
+            if (player.x > nextGoalX - 800) generateSection(nextGoalX);
+
+            for (let i = goals.length-1; i >= 0; i--) {
+                let g = goals[i];
+                if (player.x + player.w > g.x && player.x < g.x + g.w && player.y + player.h > g.y && player.y < g.y + g.h) goals.splice(i,1);
+            }
+
+            if (mods.ghost && frameCount % 4 === 0) trails.push({x: player.x, y: player.y, a: 1});
+            trails.forEach(t => t.a -= 0.05);
+            trails = trails.filter(t => t.a > 0);
+        }
+
+        function drawPlayer(x, y, w, h, color) {
+            if (!ctx) return;
+            ctx.save();
+            ctx.translate(x, y);
+            ctx.fillStyle = color; ctx.strokeStyle = '#000'; ctx.lineWidth = 2;
+            ctx.fillRect(0, 0, w, h); ctx.strokeRect(0, 0, w, h);
+            ctx.beginPath(); ctx.moveTo(w*0.2, 0); ctx.lineTo(w*0.1, -h*0.3); ctx.lineTo(w*0.4, 0); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(w*0.8, 0); ctx.lineTo(w*0.9, -h*0.3); ctx.lineTo(w*0.6, 0); ctx.fill(); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(w*0.1, h*0.7); ctx.quadraticCurveTo(w*0.5, h*0.9, w*0.9, h*0.7); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(w*0.25, h*0.3); ctx.lineTo(w*0.4, h*0.4); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(w*0.75, h*0.3); ctx.lineTo(w*0.6, h*0.4); ctx.stroke();
+            if (mods.godMode) { ctx.strokeStyle = '#f0f'; ctx.lineWidth = 3; ctx.strokeRect(-2, -2, w+4, h+4); }
+            ctx.restore();
+        }
+
+        function draw() {
+            if (!ctx) return;
+            ctx.fillStyle = mods.disco ? `hsl(${frameCount%360}, 30%, 10%)` : '#0a0a1f';
+            ctx.fillRect(0,0,800,400);
+            ctx.fillStyle = '#0f0';
+            for (let plat of platforms) {
+                let sx = plat.x - cameraX;
+                if (sx > -200 && sx < 1000) ctx.fillRect(sx, plat.y, plat.w, plat.h);
+            }
+            ctx.fillStyle = '#f0f';
+            for (let e of enemies) {
+                ctx.beginPath(); ctx.arc(e.x - cameraX, e.y, 10, 0, Math.PI*2); ctx.fill();
+            }
+            trails.forEach(t => { ctx.globalAlpha = t.a; drawPlayer(t.x - cameraX, t.y, player.w*p.size, player.h*p.size, 'rgba(0,255,255,0.2)'); });
+            ctx.globalAlpha = 1;
+            let col = mods.rainbow ? `hsl(${frameCount%360}, 80%, 50%)` : '#f00';
+            drawPlayer(player.x - cameraX, player.y, player.w*p.size, player.h*p.size, col);
+            if (mods.matrix) {
+                ctx.fillStyle = 'rgba(0,255,0,0.2)';
+                for(let i=0; i<15; i++) ctx.fillText(Math.random().toString(2), Math.random()*800, Math.random()*400);
+            }
+            document.getElementById('timer').textContent = `TIME: ${time.toFixed(2)}s`;
+        }
+
+        function gameLoop() { update(); draw(); requestAnimationFrame(gameLoop); }
+
+        function resetRun() {
+            player.x = 80; player.y = 220; player.vx = player.vy = 0;
+            platforms = []; goals = []; enemies = []; trails = []; cameraX = 0; nextGoalX = 900;
+            generateSection(0);
+        }
+
+        // UI ACTIONS
+        function startGame() {
+            document.getElementById('main-menu').style.display = 'none';
+            gameRunning = true; resetRun();
+            if (modUnlocked) { 
+                document.getElementById('mod-btn').style.display = 'block'; 
+                document.getElementById('mod-status').style.display = 'block'; 
+            }
+        }
+
+        function showPassword() {
+            document.getElementById('main-menu').style.display = 'none';
+            document.getElementById('password-screen').style.display = 'flex';
+            passwordInput = ''; updatePassDisplay(); createKeypad();
+        }
+
+        function hidePassword() {
+            document.getElementById('password-screen').style.display = 'none';
+            document.getElementById('main-menu').style.display = 'flex';
+        }
+
+        function updatePassDisplay() {
+            document.getElementById('pass-display').textContent = '••••'.substring(0, passwordInput.length) + '••••'.substring(passwordInput.length);
+        }
+
+        function createKeypad() {
+            let kp = document.getElementById('keypad'); kp.innerHTML = '';
+            for(let i=0;i<10;i++) {
+                let k = document.createElement('div'); k.className = 'key'; k.textContent = i;
+                k.style.cssText = 'background:#112;color:#0ff;border:2px solid #0ff;padding:12px;cursor:pointer;text-align:center;font-size:20px;z-index:700;';
+                // Handle both touch and click
+                k.onclick = () => handleKey(i);
+                k.ontouchstart = (e) => { e.preventDefault(); handleKey(i); };
+                kp.appendChild(k);
+            }
+        }
+
+        function handleKey(i) {
+            passwordInput += i; updatePassDisplay();
+            if(passwordInput === '2015') unlockMods();
+        }
+
+        function unlockMods() {
+            modUnlocked = true;
+            setTimeout(() => { 
+                hidePassword(); 
+                document.getElementById('mod-btn').style.display = 'block'; 
+                document.getElementById('mod-status').style.display = 'block'; 
+            }, 300);
+        }
+
+        function toggleModMenu() {
+            if (!modUnlocked) return;
+            const menu = document.getElementById('modmenu');
+            menu.style.display = (menu.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        // MOD ENGINE ACTIONS
+        function applySeed() {
+            const seed = parseInt(document.getElementById('mod-seed').value);
+            if (isNaN(seed)) return;
+            document.getElementById('mod-id-display').textContent = `MOD SEED: #${seed}`;
+            p.grav = 0.1 + (seed % 200) / 100;
+            p.speed = 0.5 + (seed % 500) / 100;
+            p.jump = 10 + (seed % 300) / 10;
+            mods.godMode = (seed % 7 === 0);
+            mods.flyMode = (seed % 11 === 0);
+            mods.disco = (seed % 3 === 0);
+            mods.rainbow = (seed % 5 === 0);
+            mods.enemies = (seed % 13 === 0);
+            mods.storm = (seed % 17 === 0);
+            updateUIValues();
+        }
+
+        function randomSeed() {
+            const r = Math.floor(Math.random() * 9999) + 1;
+            document.getElementById('mod-seed').value = r;
+            applySeed();
+        }
+
+        function setParam(key, val) {
+            if (key === 'grav') p.grav = val / 100;
+            if (key === 'speed') p.speed = val / 100;
+            if (key === 'jump') p.jump = val / 10;
+            updateUIValues();
+        }
+
+        function updateUIValues() {
+            document.getElementById('val-grav').textContent = p.grav.toFixed(2);
+            document.getElementById('val-speed').textContent = p.speed.toFixed(1);
+            document.getElementById('val-jump').textContent = p.jump.toFixed(1);
+        }
+
+        function tMod(m, id) {
+            if (!modUnlocked) return;
+            mods[m] = !mods[m];
+            document.getElementById(id).classList.toggle('mod-active');
+        }
+
+        // CONTROLS
+        window.addEventListener('keydown', e => { keys[e.key] = true; if (e.key.toLowerCase() === 'm' && modUnlocked) toggleModMenu(); });
+        window.addEventListener('keyup', e => keys[e.key] = false);
+
+        function setupMobile() {
+            const jumpBtn = document.getElementById('jump-btn');
+            const knob = document.getElementById('joystick-knob');
+            const container = document.getElementById('joystick-container');
+
+            jumpBtn.addEventListener('touchstart', e => { e.preventDefault(); keys[' '] = true; });
+            jumpBtn.addEventListener('touchend', () => keys[' '] = false);
+
+            container.addEventListener('touchstart', e => { e.preventDefault(); updateJoystick(e.touches[0]); });
+            container.addEventListener('touchmove',  e => { e.preventDefault(); updateJoystick(e.touches[0]); });
+            container.addEventListener('touchend',   () => { 
+                document.getElementById('joystick-knob').style.transform = 'translate(0px, 0px)'; 
+                joystickX = 0; 
+            });
+        }
+
+        function updateJoystick(touch) {
+            const rect = document.getElementById('joystick-container').getBoundingClientRect();
+            let dx = touch.clientX - rect.left - 60;
+            dx = Math.max(-40, Math.min(40, dx));
+            document.getElementById('joystick-knob').style.transform = `translate(${dx}px, 0px)`;
+            joystickX = dx / 40;
+        }
+    </script>
+</body>
+</html>
