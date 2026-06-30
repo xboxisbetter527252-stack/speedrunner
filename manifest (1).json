@@ -1,0 +1,13 @@
+{
+  "background_color": "#ba0404",
+  "dir": "ltr",
+  "display": "standalone",
+  "name": "Speedrunner",
+  "orientation": "any",
+  "scope": "/",
+  "short_name": "Speedrunner",
+  "start_url": "/",
+  "theme_color": "#ffffff",
+  "id": "Speedrunner",
+  "description": "A fun speed running game that has endless mods"
+}
